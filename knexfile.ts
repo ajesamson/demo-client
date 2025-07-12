@@ -1,4 +1,7 @@
 import { Knex } from 'knex';
+import * as dotenv from 'dotenv';
+
+dotenv.config();
 
 const config: Knex.Config = {
   client: process.env.DB_CLIENT,
