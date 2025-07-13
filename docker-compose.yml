@@ -1,0 +1,19 @@
+services:
+  db:
+    image: mysql:9.0
+    container_name: mysql
+    volumes:
+      - mysql_data:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    env_file:
+      - .env
+    networks:
+      - demo_credit_network
+    restart: unless-stopped
+
+volumes:
+  mysql_data:
+
+networks:
+  demo_credit_network:
