@@ -10,8 +10,8 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   const config = new DocumentBuilder()
-    .setTitle('Demo credit')
-    .setDescription('Demo Credit Mobile Lending App API')
+    .setTitle('Demo Credit')
+    .setDescription('Mobile Lending App API')
     .setVersion('0.1')
     .build();
   const document = SwaggerModule.createDocument(app, config);
