@@ -4,9 +4,11 @@ import { AppService } from './app.service';
 import { KnexModule } from './knex/knex.module';
 import { UsersModule } from './users/users.module';
 import { WalletsModule } from './wallets/wallets.module';
+import { TransactionsModule } from './transactions/transactions.module';
+import { TransfersModule } from './transfers/transfers.module';
 
 @Module({
-  imports: [KnexModule, UsersModule, WalletsModule],
+  imports: [KnexModule, UsersModule, WalletsModule, TransactionsModule, TransfersModule],
   controllers: [AppController],
   providers: [AppService],
 })
