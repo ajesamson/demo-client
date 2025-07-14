@@ -8,13 +8,13 @@ import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { UpdateTransactionDto } from './dto/update-transaction.dto';
 import { KnexService } from 'src/knex/knex.service';
 import { WalletsService } from 'src/wallets/wallets.service';
-import { Wallet } from 'src/wallets/entities/wallet.entity';
 import { Knex } from 'knex';
 import { TransactionTypesEnum } from 'src/common/enums/transaction-types.enum';
 import { TransfersService } from 'src/transfers/transfers.service';
 import { Transaction } from './entities/transaction.entity';
 import { plainToInstance } from 'class-transformer';
 import { TransactionResponseDto } from './dto/trasaction-response.dto';
+import { WalletUser } from 'src/wallets/entities/wallet-user.entity';
 
 @Injectable()
 export class TransactionsService {
@@ -100,8 +100,8 @@ export class TransactionsService {
 
   async initiateWalletUpdate(
     trx: Knex,
-    senderWallet: Wallet,
-    receiverWallet: Wallet | undefined,
+    senderWallet: WalletUser,
+    receiverWallet: WalletUser | undefined,
     dto: CreateTransactionDto,
   ) {
     await this.walletService.updateBalance(
@@ -124,8 +124,8 @@ export class TransactionsService {
     trx: Knex,
     userId: number,
     dto: CreateTransactionDto,
-    senderWallet: Wallet,
-    receiverWallet: Wallet | undefined,
+    senderWallet: WalletUser,
+    receiverWallet: WalletUser | undefined,
     transferId: number,
   ): Promise<number> {
     const newTransaction = [
@@ -157,8 +157,8 @@ export class TransactionsService {
 
   async initiateTransfer(
     trx: Knex,
-    senderWallet: Wallet,
-    receiverWallet: Wallet,
+    senderWallet: WalletUser,
+    receiverWallet: WalletUser,
     dto: CreateTransactionDto,
   ): Promise<number> {
     const data = {
@@ -174,7 +174,7 @@ export class TransactionsService {
   async retrieveWallets(
     trx: Knex,
     uidList: string[],
-  ): Promise<[Wallet, Wallet | undefined]> {
+  ): Promise<[WalletUser, WalletUser | undefined]> {
     const wallets = await this.walletService.findByUidList(uidList, trx);
     const senderWallet =
       wallets[0].uid === uidList[0] ? wallets[0] : wallets[1];
@@ -182,8 +182,36 @@ export class TransactionsService {
     if (uidList.length == 2) {
       receiverWallet = wallets[0].uid === uidList[1] ? wallets[0] : wallets[1];
     }
+    this.confirmWalletStatus(senderWallet, receiverWallet);
 
     return [senderWallet, receiverWallet];
+  }
+
+  confirmWalletStatus(
+    senderWallet: WalletUser,
+    receiverWallet: WalletUser | undefined,
+  ) {
+    if (
+      !senderWallet.isWalletActive ||
+      !senderWallet.isUserActive ||
+      !senderWallet.isUserOnboarded
+    ) {
+      throw new BadRequestException('Invalid sender status', {
+        description:
+          'Sender is likely in-active, not onboarded or have a disabled wallet',
+      });
+    }
+    if (
+      receiverWallet != undefined &&
+      (!receiverWallet.isWalletActive ||
+        !receiverWallet.isUserActive ||
+        !receiverWallet.isUserOnboarded)
+    ) {
+      throw new BadRequestException('Invalid receiver status', {
+        description:
+          'Receiver is likely in-active, not onboarded or have a disabled wallet',
+      });
+    }
   }
 
   async findAll(): Promise<TransactionResponseDto[]> {
