@@ -9,15 +9,16 @@ import { WalletResponseDto } from './dto/wallet-response.dto';
 import { plainToInstance } from 'class-transformer';
 import { Knex } from 'knex';
 import { Wallet } from './entities/wallet.entity';
+import { TransactionTypesEnum } from 'src/common/enums/transaction-types.enum';
 
 @Injectable()
 export class WalletsService {
-  private readonly db_table = 'wallets';
+  private readonly dbTable = 'wallets';
 
   constructor(private readonly knexService: KnexService) {}
 
   async create(user_id: number, trx?: Knex.Transaction): Promise<number> {
-    const query = (trx ?? this.knexService.connection)(this.db_table);
+    const query = (trx ?? this.knexService.connection)(this.dbTable);
     const hasWallet = await this.findByUserId(user_id);
     if (hasWallet != undefined) {
       throw new BadRequestException('User already has wallet', {
@@ -46,14 +47,14 @@ export class WalletsService {
 
   async findByUserId(user_id: number): Promise<Wallet | undefined> {
     return await this.knexService
-      .connection<Wallet>(this.db_table)
+      .connection<Wallet>(this.dbTable)
       .where({ user_id })
       .first();
   }
 
   async findById(id: number): Promise<Wallet> {
     const wallet = await this.knexService
-      .connection<Wallet>(this.db_table)
+      .connection<Wallet>(this.dbTable)
       .where({ id })
       .first();
 
@@ -69,7 +70,7 @@ export class WalletsService {
 
   async findByUid(uid: string): Promise<Wallet> {
     const wallet = await this.knexService
-      .connection<Wallet>(this.db_table)
+      .connection<Wallet>(this.dbTable)
       .where({ uid })
       .first();
 
@@ -83,9 +84,24 @@ export class WalletsService {
     return wallet;
   }
 
+  async findByUidList(uidList: string[], trx: Knex): Promise<Wallet[]> {
+    const wallets = await trx<Wallet>(this.dbTable)
+      .whereIn('uid', uidList)
+      .select();
+
+    if (wallets.length != uidList.length) {
+      throw new NotFoundException('Wallets not found', {
+        cause: new Error(),
+        description: `One or more wallets could not found`,
+      });
+    }
+
+    return wallets;
+  }
+
   async findAll(): Promise<WalletResponseDto[]> {
     const data = await this.knexService
-      .connection<Wallet>(this.db_table)
+      .connection<Wallet>(this.dbTable)
       .select();
     return plainToInstance(WalletResponseDto, data, {
       excludeExtraneousValues: true,
@@ -104,15 +120,35 @@ export class WalletsService {
     updateWalletDto: UpdateWalletDto,
     trx?: Knex.Transaction,
   ): Promise<WalletResponseDto> {
-    const query = (trx ?? this.knexService.connection)(this.db_table);
-    const wallet = await this.findByUid(uid);
-    const updatedId = await query
-      .where({ id: wallet.id })
-      .update(updateWalletDto);
-    const updatedWallet = this.findById(updatedId);
+    const query = (trx ?? this.knexService.connection)(this.dbTable);
+    const affectedRow = await query.where({ uid }).update(updateWalletDto);
+    if (!affectedRow) {
+      throw new NotFoundException('Wallet not found', {
+        cause: new Error(),
+        description: `Wallet with id ${uid} not found`,
+      });
+    }
+    const updatedWallet = this.findByUid(uid);
 
     return plainToInstance(WalletResponseDto, updatedWallet, {
       excludeExtraneousValues: true,
     });
+  }
+
+  async updateBalance(
+    trx: Knex,
+    id: number,
+    amount: string,
+    type: TransactionTypesEnum,
+  ) {
+    if (type == TransactionTypesEnum.CREDIT) {
+      return await trx<Wallet>(this.dbTable)
+        .where({ id })
+        .increment('balance', +amount);
+    } else {
+      return await trx<Wallet>(this.dbTable)
+        .where({ id })
+        .decrement('balance', +amount);
+    }
   }
 }
