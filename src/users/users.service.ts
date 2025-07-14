@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   Injectable,
+  InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -11,7 +12,9 @@ import { UserResponseDto } from './dto/user-response.dto';
 import { plainToInstance } from 'class-transformer';
 import { HttpService } from '@nestjs/axios';
 import { catchError, firstValueFrom } from 'rxjs';
-import { AxiosError } from 'axios';
+import { AxiosError, AxiosRequestConfig } from 'axios';
+import { WalletsService } from 'src/wallets/wallets.service';
+import { User } from './entities/user.entity';
 
 @Injectable()
 export class UsersService {
@@ -22,27 +25,45 @@ export class UsersService {
   constructor(
     private readonly knexService: KnexService,
     private readonly httpService: HttpService,
+    private readonly walletService: WalletsService,
   ) {}
 
   async create(dto: CreateUserDto): Promise<UserResponseDto> {
     // TODO: Confirm the user is not part of blacklist
-    const salt = await bcrypt.genSalt();
-    const hash = await bcrypt.hash(dto.password, salt);
-    const [id] = await this.knexService.connection(this.db_table).insert({
-      email: dto.email,
-      password_hash: hash,
-      fullname: dto.fullname,
-      mobile: dto.mobile,
-    });
-    // TODO: Create wallet for user in a transaction
+    try {
+      await this.knexService.connection.transaction(async (trx) => {
+        const salt = await bcrypt.genSalt();
+        const hash = await bcrypt.hash(dto.password, salt);
+        const [id] = await trx(this.db_table).insert({
+          email: dto.email,
+          password_hash: hash,
+          fullname: dto.fullname,
+          mobile: dto.mobile,
+        });
+        // TODO: Create wallet for user in a transaction
+        const _walletId = await this.walletService.create(id, trx);
 
-    const user = this.findById(id);
-    return plainToInstance(UserResponseDto, user);
+        const user = this.findById(id);
+        return plainToInstance(UserResponseDto, user, {
+          excludeExtraneousValues: true,
+        });
+      });
+    } catch (error) {
+      throw new InternalServerErrorException('User account creation failed', {
+        cause: error,
+        description: 'Problem creating account and wallet',
+      });
+    }
+    throw new Error('User account not processed');
   }
 
   async validateUser(email: string): Promise<boolean> {
+    const API_KEY = process.env.ADJUTOR_API_KEY;
+    const config: AxiosRequestConfig = {
+      headers: { Authorization: `Bearer ${API_KEY}` },
+    };
     const { data } = await firstValueFrom(
-      this.httpService.get(`${this.karma_url}${email}`).pipe(
+      this.httpService.get(`${this.karma_url}${email}`, config).pipe(
         catchError((_error: AxiosError) => {
           throw new BadRequestException();
         }),
@@ -53,22 +74,33 @@ export class UsersService {
   }
 
   async findAll(): Promise<UserResponseDto[]> {
-    const users = await this.knexService.connection(this.db_table).select();
+    const users = await this.knexService
+      .connection<User>(this.db_table)
+      .select();
     return plainToInstance(UserResponseDto, users, {
       excludeExtraneousValues: true,
     });
   }
 
-  async findById(id: number) {
-    return await this.knexService
-      .connection(this.db_table)
+  async findById(id: number): Promise<User> {
+    const user = await this.knexService
+      .connection<User>(this.db_table)
       .where({ id })
       .first();
+
+    if (!user) {
+      throw new NotFoundException('User not found', {
+        cause: new Error(),
+        description: `User with id not found`,
+      });
+    }
+
+    return user;
   }
 
-  async findByUid(uid: string) {
+  async findByUid(uid: string): Promise<User> {
     const user = await this.knexService
-      .connection(this.db_table)
+      .connection<User>(this.db_table)
       .where({ uid })
       .first();
 
