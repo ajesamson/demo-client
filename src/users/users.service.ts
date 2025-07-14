@@ -123,15 +123,21 @@ export class UsersService {
   }
 
   async update(uid: string, updateUserDto: UpdateUserDto) {
-    const user = await this.findByUid(uid);
-    const updatedId = await this.knexService
-      .connection(this.db_table)
+    const affectedRow = await this.knexService
+      .connection<User>(this.db_table)
       .where({
-        id: user.id,
+        uid,
       })
       .update(updateUserDto);
 
-    const updatedUser = this.findById(updatedId);
+    if (!affectedRow) {
+      throw new NotFoundException('User not found', {
+        cause: new Error(),
+        description: `User with id ${uid} not found`,
+      });
+    }
+
+    const updatedUser = this.findByUid(uid);
     return plainToInstance(UserResponseDto, updatedUser, {
       excludeExtraneousValues: true,
     });
