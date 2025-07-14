@@ -18,7 +18,7 @@ import { User } from './entities/user.entity';
 
 @Injectable()
 export class UsersService {
-  private readonly db_table = 'users';
+  private readonly dbTable = 'users';
   private readonly karma_url =
     'https://adjutor.lendsqr.com/v2/verification/karma/';
 
@@ -30,23 +30,27 @@ export class UsersService {
 
   async create(dto: CreateUserDto): Promise<UserResponseDto> {
     // TODO: Confirm the user is not part of blacklist
+    const isValidated = await this.validateUser(dto.email);
     try {
-      await this.knexService.connection.transaction(async (trx) => {
-        const salt = await bcrypt.genSalt();
-        const hash = await bcrypt.hash(dto.password, salt);
-        const [id] = await trx(this.db_table).insert({
-          email: dto.email,
-          password_hash: hash,
-          fullname: dto.fullname,
-          mobile: dto.mobile,
-        });
-        // TODO: Create wallet for user in a transaction
-        const _walletId = await this.walletService.create(id, trx);
+      const user = await this.knexService.connection.transaction(
+        async (trx) => {
+          const salt = await bcrypt.genSalt();
+          const hash = await bcrypt.hash(dto.password, salt);
+          const [id] = await trx(this.dbTable).insert({
+            email: dto.email,
+            password_hash: hash,
+            fullname: dto.fullname,
+            mobile: dto.mobile,
+            is_onboarded: true,
+          });
+          // TODO: Create wallet for user in a transaction
+          const _walletId = await this.walletService.create(id, trx);
 
-        const user = this.findById(id);
-        return plainToInstance(UserResponseDto, user, {
-          excludeExtraneousValues: true,
-        });
+          return await this.findById(id);
+        },
+      );
+      return plainToInstance(UserResponseDto, user, {
+        excludeExtraneousValues: true,
       });
     } catch (error) {
       throw new InternalServerErrorException('User account creation failed', {
@@ -75,7 +79,7 @@ export class UsersService {
 
   async findAll(): Promise<UserResponseDto[]> {
     const users = await this.knexService
-      .connection<User>(this.db_table)
+      .connection<User>(this.dbTable)
       .select();
     return plainToInstance(UserResponseDto, users, {
       excludeExtraneousValues: true,
@@ -84,7 +88,7 @@ export class UsersService {
 
   async findById(id: number): Promise<User> {
     const user = await this.knexService
-      .connection<User>(this.db_table)
+      .connection<User>(this.dbTable)
       .where({ id })
       .first();
 
@@ -100,7 +104,7 @@ export class UsersService {
 
   async findByUid(uid: string): Promise<User> {
     const user = await this.knexService
-      .connection<User>(this.db_table)
+      .connection<User>(this.dbTable)
       .where({ uid })
       .first();
 
@@ -124,7 +128,7 @@ export class UsersService {
 
   async update(uid: string, updateUserDto: UpdateUserDto) {
     const affectedRow = await this.knexService
-      .connection<User>(this.db_table)
+      .connection<User>(this.dbTable)
       .where({
         uid,
       })
