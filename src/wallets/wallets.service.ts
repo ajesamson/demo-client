@@ -10,6 +10,7 @@ import { plainToInstance } from 'class-transformer';
 import { Knex } from 'knex';
 import { Wallet } from './entities/wallet.entity';
 import { TransactionTypesEnum } from 'src/common/enums/transaction-types.enum';
+import { WalletUser } from './entities/wallet-user.entity';
 
 @Injectable()
 export class WalletsService {
@@ -84,10 +85,18 @@ export class WalletsService {
     return wallet;
   }
 
-  async findByUidList(uidList: string[], trx: Knex): Promise<Wallet[]> {
-    const wallets = await trx<Wallet>(this.dbTable)
-      .whereIn('uid', uidList)
-      .select();
+  async findByUidList(uidList: string[], trx: Knex): Promise<WalletUser[]> {
+    const wallets: WalletUser[] = await trx<WalletUser>(this.dbTable)
+      .whereIn('wallets.uid', uidList)
+      .leftJoin('users', 'users.id', 'wallets.user_id')
+      .select(
+        'wallets.id as id',
+        'wallets.uid as uid',
+        'wallets.currency',
+        'wallets.is_active as isWalletActive',
+        'users.is_active as isUserActive',
+        'users.is_onboarded as isUserOnboarded',
+      );
 
     if (wallets.length != uidList.length) {
       throw new NotFoundException('Wallets not found', {
