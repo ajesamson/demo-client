@@ -1,8 +1,8 @@
 import { Expose } from 'class-transformer';
 
 export class UserResponseDto {
-  @Expose()
-  uid: string;
+  @Expose({ name: 'uid' })
+  id: string;
 
   @Expose()
   email: string;

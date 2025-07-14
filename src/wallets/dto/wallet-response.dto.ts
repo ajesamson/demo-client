@@ -1,8 +1,8 @@
 import { Expose } from 'class-transformer';
 
 export class WalletResponseDto {
-  @Expose()
-  uid: string;
+  @Expose({ name: 'uid' })
+  id: string;
 
   @Expose()
   balance: number;
