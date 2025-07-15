@@ -70,7 +70,7 @@ export class TransactionsService {
           }
 
           // create transaction
-          const user = await this.usersService.findByField({ uid }, trx);
+          const user = await this.usersService.findByUid(uid, trx);
           if (!user) {
             throw new BadRequestException();
           }
