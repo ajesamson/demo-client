@@ -1,8 +1,8 @@
 export interface UserTokenEntity {
-  user: AuthenticatedUser;
+  user: AuthenticatedUserEntity;
 }
 
-export interface AuthenticatedUser {
+export interface AuthenticatedUserEntity {
   sub: string;
   email: string;
   iat: number;

@@ -4,7 +4,7 @@ import { LoginDto } from './dtos/login.dto';
 import { Public } from './decorators/public.decorator';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import {
-  AuthenticatedUser,
+  AuthenticatedUserEntity,
   UserTokenEntity,
 } from './entities/user-token.entity';
 
@@ -20,7 +20,7 @@ export class AuthController {
   }
 
   @Get('profile')
-  getProfile(@Request() req: UserTokenEntity): AuthenticatedUser {
+  getProfile(@Request() req: UserTokenEntity): AuthenticatedUserEntity {
     return req.user;
   }
 }

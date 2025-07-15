@@ -1,4 +1,4 @@
-export interface Wallet {
+export interface WalletEntity {
   id: number;
   uid: string;
   user_id: number;

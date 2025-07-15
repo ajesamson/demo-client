@@ -11,10 +11,10 @@ import { WalletsService } from 'src/wallets/wallets.service';
 import { Knex } from 'knex';
 import { TransactionTypesEnum } from 'src/common/enums/transaction-types.enum';
 import { TransfersService } from 'src/transfers/transfers.service';
-import { Transaction } from './entities/transaction.entity';
+import { TransactionEntity } from './entities/transaction.entity';
 import { plainToInstance } from 'class-transformer';
 import { TransactionResponseDto } from './dto/transaction-response.dto';
-import { WalletUser } from 'src/wallets/entities/wallet-user.entity';
+import { WalletUserEntity } from 'src/wallets/entities/wallet-user.entity';
 import { UsersService } from 'src/users/users.service';
 
 @Injectable()
@@ -91,7 +91,7 @@ export class TransactionsService {
             dto,
           );
 
-          return await trx<Transaction>(this.dbTable)
+          return await trx<TransactionEntity>(this.dbTable)
             .where({ id: transactionId })
             .first();
         },
@@ -113,8 +113,8 @@ export class TransactionsService {
 
   async initiateWalletUpdate(
     trx: Knex,
-    senderWallet: WalletUser,
-    receiverWallet: WalletUser | undefined,
+    senderWallet: WalletUserEntity,
+    receiverWallet: WalletUserEntity | undefined,
     dto: CreateTransactionDto,
   ) {
     await this.walletService.updateBalance(
@@ -137,8 +137,8 @@ export class TransactionsService {
     trx: Knex,
     userId: number,
     dto: CreateTransactionDto,
-    senderWallet: WalletUser,
-    receiverWallet: WalletUser | undefined,
+    senderWallet: WalletUserEntity,
+    receiverWallet: WalletUserEntity | undefined,
     transferId: number,
   ): Promise<number> {
     const newTransaction = [
@@ -170,8 +170,8 @@ export class TransactionsService {
 
   async initiateTransfer(
     trx: Knex,
-    senderWallet: WalletUser,
-    receiverWallet: WalletUser,
+    senderWallet: WalletUserEntity,
+    receiverWallet: WalletUserEntity,
     dto: CreateTransactionDto,
   ): Promise<number> {
     const data = {
@@ -187,7 +187,7 @@ export class TransactionsService {
   async retrieveWallets(
     trx: Knex,
     uidList: string[],
-  ): Promise<[WalletUser, WalletUser | undefined]> {
+  ): Promise<[WalletUserEntity, WalletUserEntity | undefined]> {
     const wallets = await this.walletService.findByUidList(uidList, trx);
     const senderWallet =
       wallets[0].uid === uidList[0] ? wallets[0] : wallets[1];
@@ -200,8 +200,8 @@ export class TransactionsService {
   }
 
   confirmWalletStatus(
-    senderWallet: WalletUser,
-    receiverWallet: WalletUser | undefined,
+    senderWallet: WalletUserEntity,
+    receiverWallet: WalletUserEntity | undefined,
     amount: string,
     type: TransactionTypesEnum,
   ) {
@@ -235,7 +235,7 @@ export class TransactionsService {
 
   async findAll(): Promise<TransactionResponseDto[]> {
     const data = await this.knexService
-      .connection<Transaction>(this.dbTable)
+      .connection<TransactionEntity>(this.dbTable)
       .select();
 
     return plainToInstance(TransactionResponseDto, data, {
@@ -258,16 +258,16 @@ export class TransactionsService {
     }) as TransactionResponseDto;
   }
 
-  async findById(id: number): Promise<Transaction | undefined> {
+  async findById(id: number): Promise<TransactionEntity | undefined> {
     return await this.knexService
-      .connection<Transaction>(this.dbTable)
+      .connection<TransactionEntity>(this.dbTable)
       .where({ id })
       .first();
   }
 
-  async findByUid(uid: string): Promise<Transaction | undefined> {
+  async findByUid(uid: string): Promise<TransactionEntity | undefined> {
     return await this.knexService
-      .connection<Transaction>(this.dbTable)
+      .connection<TransactionEntity>(this.dbTable)
       .where({ uid })
       .first();
   }
@@ -277,7 +277,7 @@ export class TransactionsService {
     dto: UpdateTransactionDto,
   ): Promise<TransactionResponseDto> {
     const affectedRow = await this.knexService
-      .connection<Transaction>(this.dbTable)
+      .connection<TransactionEntity>(this.dbTable)
       .where({ uid })
       .update(dto);
 
@@ -292,9 +292,5 @@ export class TransactionsService {
     return plainToInstance(TransactionResponseDto, updatedTransaction, {
       excludeExtraneousValues: true,
     }) as TransactionResponseDto;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} transaction`;
   }
 }

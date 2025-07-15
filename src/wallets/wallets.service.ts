@@ -8,9 +8,9 @@ import { KnexService } from 'src/knex/knex.service';
 import { WalletResponseDto } from './dto/wallet-response.dto';
 import { plainToInstance } from 'class-transformer';
 import { Knex } from 'knex';
-import { Wallet } from './entities/wallet.entity';
+import { WalletEntity } from './entities/wallet.entity';
 import { TransactionTypesEnum } from 'src/common/enums/transaction-types.enum';
-import { WalletUser } from './entities/wallet-user.entity';
+import { WalletUserEntity } from './entities/wallet-user.entity';
 
 @Injectable()
 export class WalletsService {
@@ -43,19 +43,19 @@ export class WalletsService {
 
     return plainToInstance(WalletResponseDto, wallet, {
       excludeExtraneousValues: true,
-    });
+    }) as WalletResponseDto;
   }
 
-  async findByUserId(user_id: number): Promise<Wallet | undefined> {
+  async findByUserId(user_id: number): Promise<WalletEntity | undefined> {
     return await this.knexService
-      .connection<Wallet>(this.dbTable)
+      .connection<WalletEntity>(this.dbTable)
       .where({ user_id })
       .first();
   }
 
-  async findById(id: number): Promise<Wallet> {
+  async findById(id: number): Promise<WalletEntity> {
     const wallet = await this.knexService
-      .connection<Wallet>(this.dbTable)
+      .connection<WalletEntity>(this.dbTable)
       .where({ id })
       .first();
 
@@ -69,9 +69,9 @@ export class WalletsService {
     return wallet;
   }
 
-  async findByUid(uid: string): Promise<Wallet> {
+  async findByUid(uid: string): Promise<WalletEntity> {
     const wallet = await this.knexService
-      .connection<Wallet>(this.dbTable)
+      .connection<WalletEntity>(this.dbTable)
       .where({ uid })
       .first();
 
@@ -85,8 +85,13 @@ export class WalletsService {
     return wallet;
   }
 
-  async findByUidList(uidList: string[], trx: Knex): Promise<WalletUser[]> {
-    const wallets: WalletUser[] = await trx<WalletUser>(this.dbTable)
+  async findByUidList(
+    uidList: string[],
+    trx: Knex,
+  ): Promise<WalletUserEntity[]> {
+    const wallets: WalletUserEntity[] = await trx<WalletUserEntity>(
+      this.dbTable,
+    )
       .whereIn('wallets.uid', uidList)
       .leftJoin('users', 'users.id', 'wallets.user_id')
       .select(
@@ -111,18 +116,18 @@ export class WalletsService {
 
   async findAll(): Promise<WalletResponseDto[]> {
     const data = await this.knexService
-      .connection<Wallet>(this.dbTable)
+      .connection<WalletEntity>(this.dbTable)
       .select();
     return plainToInstance(WalletResponseDto, data, {
       excludeExtraneousValues: true,
-    });
+    }) as WalletResponseDto[];
   }
 
   async findOne(uid: string): Promise<WalletResponseDto> {
     const data = await this.findByUid(uid);
     return plainToInstance(WalletResponseDto, data, {
       excludeExtraneousValues: true,
-    });
+    }) as WalletResponseDto;
   }
 
   async update(
@@ -142,7 +147,7 @@ export class WalletsService {
 
     return plainToInstance(WalletResponseDto, updatedWallet, {
       excludeExtraneousValues: true,
-    });
+    }) as WalletResponseDto;
   }
 
   async updateBalance(
@@ -152,11 +157,11 @@ export class WalletsService {
     type: TransactionTypesEnum,
   ) {
     if (type == TransactionTypesEnum.CREDIT) {
-      return await trx<Wallet>(this.dbTable)
+      return await trx<WalletEntity>(this.dbTable)
         .where({ id })
         .increment('balance', +amount);
     } else {
-      return await trx<Wallet>(this.dbTable)
+      return await trx<WalletEntity>(this.dbTable)
         .where({ id })
         .decrement('balance', +amount);
     }

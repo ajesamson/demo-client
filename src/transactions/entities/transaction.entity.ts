@@ -1,4 +1,4 @@
-export interface Transaction {
+export interface TransactionEntity {
   id: number;
   uid: string;
   wallet_id: number;

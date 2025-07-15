@@ -14,7 +14,7 @@ import { HttpService } from '@nestjs/axios';
 import { catchError, firstValueFrom } from 'rxjs';
 import { AxiosError, AxiosRequestConfig } from 'axios';
 import { WalletsService } from 'src/wallets/wallets.service';
-import { User } from './entities/user.entity';
+import { UserEntity } from './entities/user.entity';
 import { Knex } from 'knex';
 import { KarmaEntity } from './entities/karma.entity';
 
@@ -83,7 +83,7 @@ export class UsersService {
 
   async findAll(): Promise<UserResponseDto[]> {
     const users = await this.knexService
-      .connection<User>(this.dbTable)
+      .connection<UserEntity>(this.dbTable)
       .select();
     return plainToInstance(UserResponseDto, users, {
       excludeExtraneousValues: true,
@@ -91,14 +91,16 @@ export class UsersService {
   }
 
   async findByField(
-    where: Partial<User>,
+    where: Partial<UserEntity>,
     trx?: Knex,
-  ): Promise<User | undefined> {
-    const query = (trx ?? this.knexService.connection)<User>(this.dbTable);
+  ): Promise<UserEntity | undefined> {
+    const query = (trx ?? this.knexService.connection)<UserEntity>(
+      this.dbTable,
+    );
     return await query.where(where).first();
   }
 
-  async findByEmail(email: string): Promise<User> {
+  async findByEmail(email: string): Promise<UserEntity> {
     const user = await this.findByField({ email });
 
     if (!user) {
@@ -111,7 +113,7 @@ export class UsersService {
     return user;
   }
 
-  async findById(id: number): Promise<User> {
+  async findById(id: number): Promise<UserEntity> {
     const user = await this.findByField({ id });
 
     if (!user) {
@@ -124,7 +126,7 @@ export class UsersService {
     return user;
   }
 
-  async findByUid(uid: string): Promise<User> {
+  async findByUid(uid: string): Promise<UserEntity> {
     const user = await this.findByField({ uid });
 
     if (!user) {
@@ -142,7 +144,7 @@ export class UsersService {
 
     return plainToInstance(UserResponseDto, user, {
       excludeExtraneousValues: true,
-    });
+    }) as UserResponseDto;
   }
 
   async update(
@@ -150,7 +152,7 @@ export class UsersService {
     updateUserDto: UpdateUserDto,
   ): Promise<UserResponseDto> {
     const affectedRow = await this.knexService
-      .connection<User>(this.dbTable)
+      .connection<UserEntity>(this.dbTable)
       .where({
         uid,
       })
@@ -166,6 +168,6 @@ export class UsersService {
     const updatedUser = this.findByUid(uid);
     return plainToInstance(UserResponseDto, updatedUser, {
       excludeExtraneousValues: true,
-    });
+    }) as UserResponseDto;
   }
 }
