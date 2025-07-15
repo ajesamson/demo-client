@@ -13,6 +13,7 @@ async function bootstrap() {
     .setTitle('Demo Credit')
     .setDescription('Mobile Lending App API')
     .setVersion('0.1')
+    .addBearerAuth()
     .build();
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);

@@ -9,11 +9,12 @@ import {
 } from '@nestjs/common';
 import { WalletsService } from './wallets.service';
 import { UpdateWalletDto } from './dto/update-wallet.dto';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CreateWalletDto } from './dto/create-wallet.dto';
 import { UsersService } from 'src/users/users.service';
 
 @ApiTags('Wallets')
+@ApiBearerAuth()
 @Controller('wallets')
 export class WalletsController {
   constructor(
