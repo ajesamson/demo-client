@@ -5,6 +5,7 @@ import { UsersModule } from 'src/users/users.module';
 import { JwtModule } from '@nestjs/jwt';
 import { APP_GUARD } from '@nestjs/core';
 import { AuthGuard } from './guards/auth.guards';
+import { ThrottlerGuard } from '@nestjs/throttler';
 
 @Module({
   controllers: [AuthController],
@@ -13,6 +14,10 @@ import { AuthGuard } from './guards/auth.guards';
     {
       provide: APP_GUARD,
       useClass: AuthGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
     },
   ],
   imports: [
