@@ -15,6 +15,8 @@ import { catchError, firstValueFrom } from 'rxjs';
 import { AxiosError, AxiosRequestConfig } from 'axios';
 import { WalletsService } from 'src/wallets/wallets.service';
 import { User } from './entities/user.entity';
+import { Knex } from 'knex';
+import { KarmaEntity } from './entities/karma.entity';
 
 @Injectable()
 export class UsersService {
@@ -30,7 +32,7 @@ export class UsersService {
 
   async create(dto: CreateUserDto): Promise<UserResponseDto> {
     // TODO: Confirm the user is not part of blacklist
-    const isValidated = await this.validateUser(dto.email);
+    const karma = await this.validateUser(dto.email);
     try {
       const user = await this.knexService.connection.transaction(
         async (trx) => {
@@ -41,37 +43,41 @@ export class UsersService {
             password_hash: hash,
             fullname: dto.fullname,
             mobile: dto.mobile,
-            is_onboarded: true,
+            is_onboarded: karma.data.karma_identity ? false : true,
           });
           // TODO: Create wallet for user in a transaction
           const _walletId = await this.walletService.create(id, trx);
 
-          return await this.findById(id);
+          return await this.findByField({ id }, trx);
         },
       );
       return plainToInstance(UserResponseDto, user, {
         excludeExtraneousValues: true,
       });
     } catch (error) {
-      throw new InternalServerErrorException('User account creation failed', {
-        cause: error,
-        description: 'Problem creating account and wallet',
-      });
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
+        throw error;
+      }
+      throw new InternalServerErrorException(error);
     }
-    throw new Error('User account not processed');
   }
 
-  async validateUser(email: string): Promise<boolean> {
+  async validateUser(email: string): Promise<KarmaEntity> {
     const API_KEY = process.env.ADJUTOR_API_KEY;
     const config: AxiosRequestConfig = {
       headers: { Authorization: `Bearer ${API_KEY}` },
     };
     const { data } = await firstValueFrom(
-      this.httpService.get(`${this.karma_url}${email}`, config).pipe(
-        catchError((_error: AxiosError) => {
-          throw new BadRequestException();
-        }),
-      ),
+      this.httpService
+        .get<KarmaEntity>(`${this.karma_url}${email}`, config)
+        .pipe(
+          catchError((_error: AxiosError) => {
+            throw new BadRequestException();
+          }),
+        ),
     );
 
     return data;
@@ -86,11 +92,29 @@ export class UsersService {
     });
   }
 
+  async findByField(
+    where: Partial<User>,
+    trx?: Knex,
+  ): Promise<User | undefined> {
+    const query = (trx ?? this.knexService.connection)<User>(this.dbTable);
+    return await query.where(where).first();
+  }
+
+  async findByEmail(email: string): Promise<User> {
+    const user = await this.findByField({ email });
+
+    if (!user) {
+      throw new NotFoundException('User not found', {
+        cause: new Error(),
+        description: `User with email ${email} not found`,
+      });
+    }
+
+    return user;
+  }
+
   async findById(id: number): Promise<User> {
-    const user = await this.knexService
-      .connection<User>(this.dbTable)
-      .where({ id })
-      .first();
+    const user = await this.findByField({ id });
 
     if (!user) {
       throw new NotFoundException('User not found', {
@@ -103,10 +127,7 @@ export class UsersService {
   }
 
   async findByUid(uid: string): Promise<User> {
-    const user = await this.knexService
-      .connection<User>(this.dbTable)
-      .where({ uid })
-      .first();
+    const user = await this.findByField({ uid });
 
     if (!user) {
       throw new NotFoundException('User not found', {
@@ -126,7 +147,10 @@ export class UsersService {
     });
   }
 
-  async update(uid: string, updateUserDto: UpdateUserDto) {
+  async update(
+    uid: string,
+    updateUserDto: UpdateUserDto,
+  ): Promise<UserResponseDto> {
     const affectedRow = await this.knexService
       .connection<User>(this.dbTable)
       .where({
