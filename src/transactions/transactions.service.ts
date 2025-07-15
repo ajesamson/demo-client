@@ -16,6 +16,7 @@ import { plainToInstance } from 'class-transformer';
 import { TransactionResponseDto } from './dto/transaction-response.dto';
 import { WalletUserEntity } from 'src/wallets/entities/wallet-user.entity';
 import { UsersService } from 'src/users/users.service';
+import { TransactionTransferResponseDto } from './dto/transaction-transfer-response.dto';
 
 @Injectable()
 export class TransactionsService {
@@ -233,18 +234,51 @@ export class TransactionsService {
     }
   }
 
-  async findAll(): Promise<TransactionResponseDto[]> {
+  async findAll(): Promise<TransactionTransferResponseDto[]> {
     const data = await this.knexService
-      .connection<TransactionEntity>(this.dbTable)
-      .select();
+      .connection(this.dbTable)
+      .join('transfers', 'transfers.id', 'transactions.transfer_id')
+      .select(
+        'transactions.uid',
+        'transactions.type',
+        'transactions.amount',
+        'transactions.description',
+        'transactions.reference',
+        'transfers.uid as transfer_id',
+      );
 
-    return plainToInstance(TransactionResponseDto, data, {
+    return plainToInstance(TransactionTransferResponseDto, data, {
       excludeExtraneousValues: true,
-    }) as TransactionResponseDto[];
+    }) as TransactionTransferResponseDto[];
   }
 
-  async findOne(uid: string): Promise<TransactionResponseDto> {
-    const data = await this.findByUid(uid);
+  async findOne(uid: string): Promise<TransactionTransferResponseDto> {
+    const data = await this.knexService
+      .connection(this.dbTable)
+      .where({ 'transactions.uid': uid })
+      .leftJoin('transfers', 'transfers.id', 'transactions.transfer_id')
+      .leftJoin(
+        'wallets as senderWallet',
+        'senderWallet.id',
+        'transfers.sender_wallet_id',
+      )
+      .leftJoin(
+        'wallets as receiverWallet',
+        'receiverWallet.id',
+        'transfers.receiver_wallet_id',
+      )
+      .first(
+        'transactions.uid',
+        'transactions.type',
+        'transactions.amount',
+        'transactions.description',
+        'transactions.reference',
+        'transfers.uid as transfer_id',
+        'senderWallet.uid as sender_wallet_id',
+        'receiverWallet.uid as receiver_wallet_id',
+        'transfers.amount as transfer_amount',
+        'transfers.description as transfer_description',
+      );
 
     if (!data) {
       throw new NotFoundException('Transaction not found', {
@@ -253,9 +287,7 @@ export class TransactionsService {
       });
     }
 
-    return plainToInstance(TransactionResponseDto, data, {
-      excludeExtraneousValues: true,
-    }) as TransactionResponseDto;
+    return TransactionTransferResponseDto.fromJoinRow(data);
   }
 
   async findById(id: number): Promise<TransactionEntity | undefined> {
