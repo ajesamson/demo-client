@@ -17,10 +17,10 @@ import { WalletsService } from 'src/wallets/wallets.service';
 import { UserEntity } from './entities/user.entity';
 import { Knex } from 'knex';
 import { KarmaEntity } from './entities/karma.entity';
+import { UserRepository } from './repositories/user.repository';
 
 @Injectable()
 export class UsersService {
-  private readonly dbTable = 'users';
   private readonly karma_url =
     'https://adjutor.lendsqr.com/v2/verification/karma/';
 
@@ -28,30 +28,34 @@ export class UsersService {
     private readonly knexService: KnexService,
     private readonly httpService: HttpService,
     private readonly walletService: WalletsService,
+    private readonly repo: UserRepository,
   ) {}
 
-  async create(dto: CreateUserDto): Promise<UserResponseDto> {
+  async createUser(dto: CreateUserDto): Promise<UserResponseDto> {
     const karma = await this.validateUser(dto.email);
+    if (karma.data.karma_identity && !karma['mock-response']) {
+      throw new BadRequestException('User has been blacklisted');
+    }
     try {
+      const salt = await bcrypt.genSalt();
+      const hash = await bcrypt.hash(dto.password, salt);
+      const data = {
+        email: dto.email,
+        password_hash: hash,
+        fullname: dto.fullname,
+        mobile: dto.mobile,
+        is_onboarded: true,
+      } as UserEntity;
       const user = await this.knexService.connection.transaction(
         async (trx) => {
-          const salt = await bcrypt.genSalt();
-          const hash = await bcrypt.hash(dto.password, salt);
-          const [id] = await trx(this.dbTable).insert({
-            email: dto.email,
-            password_hash: hash,
-            fullname: dto.fullname,
-            mobile: dto.mobile,
-            is_onboarded: karma.data.karma_identity ? false : true,
-          });
-          const _walletId = await this.walletService.create(id, trx);
-
-          return await this.findByField({ id }, trx);
+          const id = await this.repo.create(data, trx);
+          await this.walletService.create(id, trx);
+          return await this.repo.findByField({ id }, trx);
         },
       );
       return plainToInstance(UserResponseDto, user, {
         excludeExtraneousValues: true,
-      }) as UserResponseDto;
+      });
     } catch (error) {
       if (
         error instanceof NotFoundException ||
@@ -82,26 +86,14 @@ export class UsersService {
   }
 
   async findAll(): Promise<UserResponseDto[]> {
-    const users = await this.knexService
-      .connection<UserEntity>(this.dbTable)
-      .select();
+    const users = await this.repo.findAll();
     return plainToInstance(UserResponseDto, users, {
       excludeExtraneousValues: true,
-    }) as UserResponseDto[];
-  }
-
-  async findByField(
-    where: Partial<UserEntity>,
-    trx?: Knex,
-  ): Promise<UserEntity | undefined> {
-    const query = (trx ?? this.knexService.connection)<UserEntity>(
-      this.dbTable,
-    );
-    return await query.where(where).first();
+    });
   }
 
   async findByEmail(email: string): Promise<UserEntity> {
-    const user = await this.findByField({ email });
+    const user = await this.repo.findByField({ email });
 
     if (!user) {
       throw new NotFoundException('User not found', {
@@ -114,7 +106,7 @@ export class UsersService {
   }
 
   async findById(id: number): Promise<UserEntity> {
-    const user = await this.findByField({ id });
+    const user = await this.repo.findByField({ id });
 
     if (!user) {
       throw new NotFoundException('User not found', {
@@ -126,8 +118,8 @@ export class UsersService {
     return user;
   }
 
-  async findByUid(uid: string): Promise<UserEntity> {
-    const user = await this.findByField({ uid });
+  async findByUid(uid: string, trx?: Knex): Promise<UserEntity> {
+    const user = await this.repo.findByField({ uid }, trx);
 
     if (!user) {
       throw new NotFoundException('User not found', {
@@ -144,19 +136,23 @@ export class UsersService {
 
     return plainToInstance(UserResponseDto, user, {
       excludeExtraneousValues: true,
-    }) as UserResponseDto;
+    });
   }
 
   async update(
     uid: string,
     updateUserDto: UpdateUserDto,
   ): Promise<UserResponseDto> {
-    const affectedRow = await this.knexService
-      .connection<UserEntity>(this.dbTable)
-      .where({
-        uid,
-      })
-      .update(updateUserDto);
+    const data = {} as UserEntity;
+    if (updateUserDto.password) {
+      const salt = await bcrypt.genSalt();
+      const hash = await bcrypt.hash(updateUserDto.password, salt);
+      data.password_hash = hash;
+    }
+    if (updateUserDto.fullname) {
+      data.fullname = updateUserDto.fullname;
+    }
+    const affectedRow = await this.repo.update(uid, data);
 
     if (!affectedRow) {
       throw new NotFoundException('User not found', {
@@ -165,9 +161,9 @@ export class UsersService {
       });
     }
 
-    const updatedUser = this.findByUid(uid);
+    const updatedUser = await this.repo.findByField({ uid });
     return plainToInstance(UserResponseDto, updatedUser, {
       excludeExtraneousValues: true,
-    }) as UserResponseDto;
+    });
   }
 }
