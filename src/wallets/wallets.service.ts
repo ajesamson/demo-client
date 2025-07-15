@@ -93,6 +93,7 @@ export class WalletsService {
         'wallets.id as id',
         'wallets.uid as uid',
         'wallets.currency',
+        'wallets.balance',
         'wallets.is_active as isWalletActive',
         'users.is_active as isUserActive',
         'users.is_onboarded as isUserOnboarded',
