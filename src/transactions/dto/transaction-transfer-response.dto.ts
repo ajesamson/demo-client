@@ -9,4 +9,24 @@ export class TransactionTransferResponseDto extends PartialType(
   @Expose()
   @Type(() => TransferResponseDto)
   transfer?: TransferResponseDto;
+
+  static fromJoinRow(row: any): TransactionTransferResponseDto {
+    return {
+      id: row.uid,
+      type: row.email,
+      amount: row.amount,
+      description: row.description,
+      reference: row.reference,
+      transfer_id: row.transfer_id,
+      transfer: row.transfer_id
+        ? {
+            id: row.transfer_id,
+            sender_wallet_id: row.sender_wallet_id,
+            receiver_wallet_id: row.receiver_wallet_id,
+            amount: row.transfer_amount,
+            description: row.transfer_description,
+          }
+        : undefined,
+    };
+  }
 }
