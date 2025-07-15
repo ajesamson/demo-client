@@ -31,7 +31,6 @@ export class UsersService {
   ) {}
 
   async create(dto: CreateUserDto): Promise<UserResponseDto> {
-    // TODO: Confirm the user is not part of blacklist
     const karma = await this.validateUser(dto.email);
     try {
       const user = await this.knexService.connection.transaction(
@@ -45,7 +44,6 @@ export class UsersService {
             mobile: dto.mobile,
             is_onboarded: karma.data.karma_identity ? false : true,
           });
-          // TODO: Create wallet for user in a transaction
           const _walletId = await this.walletService.create(id, trx);
 
           return await this.findByField({ id }, trx);
@@ -53,7 +51,7 @@ export class UsersService {
       );
       return plainToInstance(UserResponseDto, user, {
         excludeExtraneousValues: true,
-      });
+      }) as UserResponseDto;
     } catch (error) {
       if (
         error instanceof NotFoundException ||
@@ -89,7 +87,7 @@ export class UsersService {
       .select();
     return plainToInstance(UserResponseDto, users, {
       excludeExtraneousValues: true,
-    });
+    }) as UserResponseDto[];
   }
 
   async findByField(
