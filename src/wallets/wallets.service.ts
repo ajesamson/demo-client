@@ -11,10 +11,12 @@ import { Knex } from 'knex';
 import { WalletEntity } from './entities/wallet.entity';
 import { TransactionTypesEnum } from 'src/common/enums/transaction-types.enum';
 import { WalletUserEntity } from './entities/wallet-user.entity';
+import { WalletUserResponseDto } from './dto/wallet-user-response.dto';
 
 @Injectable()
 export class WalletsService {
   private readonly dbTable = 'wallets';
+  private readonly dbUserTable = 'users';
 
   constructor(private readonly knexService: KnexService) {}
 
@@ -123,11 +125,26 @@ export class WalletsService {
     }) as WalletResponseDto[];
   }
 
-  async findOne(uid: string): Promise<WalletResponseDto> {
-    const data = await this.findByUid(uid);
-    return plainToInstance(WalletResponseDto, data, {
-      excludeExtraneousValues: true,
-    }) as WalletResponseDto;
+  async findOne(uid: string): Promise<WalletUserResponseDto> {
+    const data = await this.knexService
+      .connection(this.dbTable)
+      .where({ 'wallets.uid': uid })
+      .join(
+        this.dbUserTable,
+        `${this.dbUserTable}.id`,
+        `${this.dbTable}.user_id`,
+      )
+      .first(
+        `${this.dbTable}.uid`,
+        `${this.dbTable}.balance`,
+        `${this.dbTable}.currency`,
+        `${this.dbUserTable}.uid as user_id`,
+        `${this.dbUserTable}.email`,
+        `${this.dbUserTable}.fullname`,
+        `${this.dbUserTable}.mobile`,
+      );
+
+    return WalletUserResponseDto.fromJoinRow(data);
   }
 
   async update(
