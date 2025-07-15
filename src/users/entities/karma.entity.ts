@@ -3,6 +3,7 @@ export interface KarmaEntity {
   message: string;
   data: KarmaData;
   meta: KarmaMeta;
+  'mock-response'?: string;
 }
 
 interface KarmaData {
