@@ -13,8 +13,9 @@ import { TransactionTypesEnum } from 'src/common/enums/transaction-types.enum';
 import { TransfersService } from 'src/transfers/transfers.service';
 import { Transaction } from './entities/transaction.entity';
 import { plainToInstance } from 'class-transformer';
-import { TransactionResponseDto } from './dto/trasaction-response.dto';
+import { TransactionResponseDto } from './dto/transaction-response.dto';
 import { WalletUser } from 'src/wallets/entities/wallet-user.entity';
+import { UsersService } from 'src/users/users.service';
 
 @Injectable()
 export class TransactionsService {
@@ -23,11 +24,12 @@ export class TransactionsService {
     private readonly knexService: KnexService,
     private readonly walletService: WalletsService,
     private readonly transfersService: TransfersService,
+    private readonly usersService: UsersService,
   ) {}
 
   async create(
     dto: CreateTransactionDto,
-    userId: number,
+    uid: string,
   ): Promise<TransactionResponseDto | undefined> {
     // NOTE: only debit transaction would have a receiver_wallet_id
     if (dto.type == TransactionTypesEnum.CREDIT && dto.receiver_wallet_id) {
@@ -67,6 +69,11 @@ export class TransactionsService {
           }
 
           // create transaction
+          const user = await this.usersService.findByField({ uid }, trx);
+          if (!user) {
+            throw new BadRequestException();
+          }
+          const userId = user.id;
           const transactionId = await this.initiateTransaction(
             trx,
             userId,
@@ -92,7 +99,7 @@ export class TransactionsService {
 
       return plainToInstance(TransactionResponseDto, newTransactionData, {
         excludeExtraneousValues: true,
-      });
+      }) as TransactionResponseDto;
     } catch (error) {
       if (
         error instanceof NotFoundException ||
@@ -233,7 +240,7 @@ export class TransactionsService {
 
     return plainToInstance(TransactionResponseDto, data, {
       excludeExtraneousValues: true,
-    });
+    }) as TransactionResponseDto[];
   }
 
   async findOne(uid: string): Promise<TransactionResponseDto> {
@@ -248,7 +255,7 @@ export class TransactionsService {
 
     return plainToInstance(TransactionResponseDto, data, {
       excludeExtraneousValues: true,
-    });
+    }) as TransactionResponseDto;
   }
 
   async findById(id: number): Promise<Transaction | undefined> {
@@ -284,7 +291,7 @@ export class TransactionsService {
     const updatedTransaction = await this.findByUid(uid);
     return plainToInstance(TransactionResponseDto, updatedTransaction, {
       excludeExtraneousValues: true,
-    });
+    }) as TransactionResponseDto;
   }
 
   remove(id: number) {

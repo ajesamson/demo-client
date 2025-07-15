@@ -6,11 +6,13 @@ import {
   Patch,
   Param,
   ParseUUIDPipe,
+  Request,
 } from '@nestjs/common';
 import { TransactionsService } from './transactions.service';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { UpdateTransactionDto } from './dto/update-transaction.dto';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { UserTokenEntity } from 'src/auth/entities/user-token.entity';
 
 @ApiTags('Transactions')
 @ApiBearerAuth()
@@ -19,10 +21,12 @@ export class TransactionsController {
   constructor(private readonly transactionsService: TransactionsService) {}
 
   @Post()
-  async create(@Body() createTransactionDto: CreateTransactionDto) {
-    // TODO: replace with id of currently logged in user
-    const userId = 1;
-    return await this.transactionsService.create(createTransactionDto, userId);
+  async create(
+    @Body() createTransactionDto: CreateTransactionDto,
+    @Request() request: UserTokenEntity,
+  ) {
+    const { sub: uid } = request.user;
+    return await this.transactionsService.create(createTransactionDto, uid);
   }
 
   @Get()
