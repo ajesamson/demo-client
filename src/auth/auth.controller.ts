@@ -3,6 +3,10 @@ import { AuthService } from './auth.service';
 import { LoginDto } from './dtos/login.dto';
 import { Public } from './decorators/public.decorator';
 import { ApiBearerAuth } from '@nestjs/swagger';
+import {
+  AuthenticatedUser,
+  UserTokenEntity,
+} from './entities/user-token.entity';
 
 @ApiBearerAuth()
 @Controller('auth')
@@ -16,7 +20,7 @@ export class AuthController {
   }
 
   @Get('profile')
-  getProfile(@Request() req) {
+  getProfile(@Request() req: UserTokenEntity): AuthenticatedUser {
     return req.user;
   }
 }

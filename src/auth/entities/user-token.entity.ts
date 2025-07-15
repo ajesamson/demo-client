@@ -2,7 +2,7 @@ export interface UserTokenEntity {
   user: AuthenticatedUser;
 }
 
-interface AuthenticatedUser {
+export interface AuthenticatedUser {
   sub: string;
   email: string;
   iat: number;
