@@ -48,6 +48,12 @@ export class TransactionsService {
             trx,
             walletUidList,
           );
+          this.confirmWalletStatus(
+            senderWallet,
+            receiverWallet,
+            dto.amount,
+            dto.type,
+          );
 
           // create transfer if present
           let transferId = 0;
@@ -182,7 +188,6 @@ export class TransactionsService {
     if (uidList.length == 2) {
       receiverWallet = wallets[0].uid === uidList[1] ? wallets[0] : wallets[1];
     }
-    this.confirmWalletStatus(senderWallet, receiverWallet);
 
     return [senderWallet, receiverWallet];
   }
@@ -190,6 +195,8 @@ export class TransactionsService {
   confirmWalletStatus(
     senderWallet: WalletUser,
     receiverWallet: WalletUser | undefined,
+    amount: string,
+    type: TransactionTypesEnum,
   ) {
     if (
       !senderWallet.isWalletActive ||
@@ -199,6 +206,11 @@ export class TransactionsService {
       throw new BadRequestException('Invalid sender status', {
         description:
           'Sender is likely in-active, not onboarded or have a disabled wallet',
+      });
+    }
+    if (+senderWallet.balance < +amount && type == TransactionTypesEnum.DEBIT) {
+      throw new BadRequestException('Insufficient fund', {
+        description: `Your Wallet balance of ${senderWallet.balance} is insufficient`,
       });
     }
     if (
