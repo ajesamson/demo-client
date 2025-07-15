@@ -1,5 +1,4 @@
 import { Expose } from 'class-transformer';
-import { TransactionTypesEnum } from 'src/common/enums/transaction-types.enum';
 
 export class TransactionResponseDto {
   @Expose({ name: 'uid' })
@@ -16,4 +15,7 @@ export class TransactionResponseDto {
 
   @Expose()
   reference: string;
+
+  @Expose()
+  transfer_id: string;
 }
