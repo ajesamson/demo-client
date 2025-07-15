@@ -39,6 +39,11 @@ export class WalletsController {
     return await this.walletsService.findOne(uid);
   }
 
+  @Get(':uid/transactions')
+  async findTransactions(@Param('uid', new ParseUUIDPipe()) uid: string) {
+    return await this.walletsService.findWalletTransactions(uid);
+  }
+
   @Patch(':uid')
   async update(
     @Param('uid', new ParseUUIDPipe()) uid: string,

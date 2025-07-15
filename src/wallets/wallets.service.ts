@@ -12,11 +12,13 @@ import { WalletEntity } from './entities/wallet.entity';
 import { TransactionTypesEnum } from 'src/common/enums/transaction-types.enum';
 import { WalletUserEntity } from './entities/wallet-user.entity';
 import { WalletUserResponseDto } from './dto/wallet-user-response.dto';
+import { WalletTransactionsResponseDto } from './dto/wallet-transactions-response.dto';
 
 @Injectable()
 export class WalletsService {
   private readonly dbTable = 'wallets';
   private readonly dbUserTable = 'users';
+  private readonly dbTransactionsTable = 'transactions';
 
   constructor(private readonly knexService: KnexService) {}
 
@@ -144,7 +146,39 @@ export class WalletsService {
         `${this.dbUserTable}.mobile`,
       );
 
-    return WalletUserResponseDto.fromJoinRow(data);
+    const dataFromRow = WalletUserResponseDto.fromJoinRow(data);
+    return plainToInstance(WalletUserResponseDto, dataFromRow, {
+      excludeExtraneousValues: true,
+    }) as WalletUserResponseDto;
+  }
+
+  async findWalletTransactions(
+    uid: string,
+  ): Promise<WalletTransactionsResponseDto> {
+    const data = await this.knexService
+      .connection(this.dbTable)
+      .where('wallets.uid', uid)
+      .leftJoin(
+        this.dbTransactionsTable,
+        `${this.dbTransactionsTable}.wallet_id`,
+        `${this.dbTable}.id`,
+      )
+      .select(
+        `${this.dbTable}.uid`,
+        `${this.dbTable}.balance`,
+        `${this.dbTable}.currency`,
+        `${this.dbTransactionsTable}.uid as transaction_id`,
+        `${this.dbTransactionsTable}.type`,
+        `${this.dbTransactionsTable}.amount`,
+        `${this.dbTransactionsTable}.description`,
+        `${this.dbTransactionsTable}.created_at`,
+      )
+      .orderBy(`${this.dbTransactionsTable}.created_at`, 'desc');
+
+    const dataFromRow = WalletTransactionsResponseDto.fromJoinRow(data);
+    return plainToInstance(WalletTransactionsResponseDto, dataFromRow, {
+      excludeExtraneousValues: true,
+    }) as WalletTransactionsResponseDto;
   }
 
   async update(
