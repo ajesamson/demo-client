@@ -4,12 +4,12 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { UpdateWalletDto } from './dto/update-wallet.dto';
-import { KnexService } from 'src/knex/knex.service';
+import { KnexService } from '../knex/knex.service';
 import { WalletResponseDto } from './dto/wallet-response.dto';
 import { plainToInstance } from 'class-transformer';
 import { Knex } from 'knex';
 import { WalletEntity } from './entities/wallet.entity';
-import { TransactionTypesEnum } from 'src/common/enums/transaction-types.enum';
+import { TransactionTypesEnum } from '../common/enums/transaction-types.enum';
 import { WalletUserEntity } from './entities/wallet-user.entity';
 import { WalletUserResponseDto } from './dto/wallet-user-response.dto';
 import { WalletTransactionsResponseDto } from './dto/wallet-transactions-response.dto';
@@ -47,7 +47,7 @@ export class WalletsService {
 
     return plainToInstance(WalletResponseDto, wallet, {
       excludeExtraneousValues: true,
-    }) as WalletResponseDto;
+    });
   }
 
   async findByUserId(user_id: number): Promise<WalletEntity | undefined> {
@@ -124,7 +124,7 @@ export class WalletsService {
       .select();
     return plainToInstance(WalletResponseDto, data, {
       excludeExtraneousValues: true,
-    }) as WalletResponseDto[];
+    });
   }
 
   async findOne(uid: string): Promise<WalletUserResponseDto> {
@@ -149,7 +149,7 @@ export class WalletsService {
     const dataFromRow = WalletUserResponseDto.fromJoinRow(data);
     return plainToInstance(WalletUserResponseDto, dataFromRow, {
       excludeExtraneousValues: true,
-    }) as WalletUserResponseDto;
+    });
   }
 
   async findWalletTransactions(
@@ -178,7 +178,7 @@ export class WalletsService {
     const dataFromRow = WalletTransactionsResponseDto.fromJoinRow(data);
     return plainToInstance(WalletTransactionsResponseDto, dataFromRow, {
       excludeExtraneousValues: true,
-    }) as WalletTransactionsResponseDto;
+    });
   }
 
   async update(
@@ -198,7 +198,7 @@ export class WalletsService {
 
     return plainToInstance(WalletResponseDto, updatedWallet, {
       excludeExtraneousValues: true,
-    }) as WalletResponseDto;
+    });
   }
 
   async updateBalance(
