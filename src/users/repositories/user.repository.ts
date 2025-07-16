@@ -22,13 +22,18 @@ export class UserRepository {
     return await query.where(where).first();
   }
 
-  async update(uid: string, data: UserEntity): Promise<number> {
-    return await this.knexService
+  async update(uid: string, data: UserEntity): Promise<UserEntity | undefined> {
+    const affectedRow = await this.knexService
       .connection<UserEntity>(this.table)
       .where({
         uid,
       })
       .update(data);
+    if (!affectedRow) {
+      return undefined;
+    }
+
+    return await this.findByField({ uid });
   }
 
   async create(data: UserEntity, trx: Knex): Promise<number> {
