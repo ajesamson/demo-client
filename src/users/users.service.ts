@@ -6,14 +6,14 @@ import {
 } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { KnexService } from 'src/knex/knex.service';
+import { KnexService } from '../knex/knex.service';
 import * as bcrypt from 'bcrypt';
 import { UserResponseDto } from './dto/user-response.dto';
 import { plainToInstance } from 'class-transformer';
 import { HttpService } from '@nestjs/axios';
 import { catchError, firstValueFrom } from 'rxjs';
 import { AxiosError, AxiosRequestConfig } from 'axios';
-import { WalletsService } from 'src/wallets/wallets.service';
+import { WalletsService } from '../wallets/wallets.service';
 import { UserEntity } from './entities/user.entity';
 import { Knex } from 'knex';
 import { KarmaEntity } from './entities/karma.entity';
@@ -152,16 +152,15 @@ export class UsersService {
     if (updateUserDto.fullname) {
       data.fullname = updateUserDto.fullname;
     }
-    const affectedRow = await this.repo.update(uid, data);
+    const updatedUser = await this.repo.update(uid, data);
 
-    if (!affectedRow) {
+    if (!updatedUser) {
       throw new NotFoundException('User not found', {
         cause: new Error(),
         description: `User with id ${uid} not found`,
       });
     }
 
-    const updatedUser = await this.repo.findByField({ uid });
     return plainToInstance(UserResponseDto, updatedUser, {
       excludeExtraneousValues: true,
     });
