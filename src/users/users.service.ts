@@ -33,7 +33,7 @@ export class UsersService {
 
   async createUser(dto: CreateUserDto): Promise<UserResponseDto> {
     const karma = await this.validateUser(dto.email);
-    if (karma.data.karma_identity && !karma['mock-response']) {
+    if (!karma['mock-response'] && karma.data.karma_identity != '') {
       throw new BadRequestException('User has been blacklisted');
     }
     try {
@@ -49,6 +49,9 @@ export class UsersService {
       const user = await this.knexService.connection.transaction(
         async (trx) => {
           const id = await this.repo.create(data, trx);
+          if (id == undefined) {
+            throw new BadRequestException('Email is already registered');
+          }
           await this.walletService.create(id, trx);
           return await this.repo.findByField({ id }, trx);
         },
