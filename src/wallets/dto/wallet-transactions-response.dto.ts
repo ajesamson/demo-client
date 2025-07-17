@@ -2,6 +2,7 @@ import { PartialType } from '@nestjs/swagger';
 import { WalletResponseDto } from './wallet-response.dto';
 import { Expose, Type } from 'class-transformer';
 import { TransactionSummaryResponseDto } from 'src/transactions/dto/transaction-summary-response.dto';
+import { WalletTransactionsEntity } from '../entities/wallet-transactions.entity';
 
 export class WalletTransactionsResponseDto extends PartialType(
   WalletResponseDto,
@@ -10,7 +11,9 @@ export class WalletTransactionsResponseDto extends PartialType(
   @Type(() => TransactionSummaryResponseDto)
   transactions: TransactionSummaryResponseDto[];
 
-  static fromJoinRow(rows: any[]): WalletTransactionsResponseDto {
+  static fromJoinRow(
+    rows: WalletTransactionsEntity[],
+  ): WalletTransactionsResponseDto {
     const { uid, balance, currency } = rows[0];
     const transactions = rows.map(
       (row) =>
