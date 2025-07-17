@@ -19,13 +19,14 @@ describe('UsersController', () => {
       return await Promise.resolve(user);
     }),
     update: jest.fn(async (uid: string, dto: UpdateUserDto) => {
-      const user = userResponseDtoStub[0];
-      user.fullname = dto.fullname;
+      const user = { ...userResponseDtoStub[0], fullname: dto.fullname };
       return await Promise.resolve(user);
     }),
   };
 
   beforeEach(async () => {
+    jest.clearAllMocks();
+
     const module: TestingModule = await Test.createTestingModule({
       controllers: [UsersController],
       providers: [{ provide: UsersService, useValue: mockUsersService }],

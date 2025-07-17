@@ -20,6 +20,8 @@ describe('WalletsController', () => {
   };
 
   beforeEach(async () => {
+    jest.clearAllMocks();
+
     const module: TestingModule = await Test.createTestingModule({
       controllers: [WalletsController],
       providers: [
