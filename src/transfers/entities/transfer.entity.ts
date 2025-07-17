@@ -1,4 +1,4 @@
-export interface Transfer {
+export interface TransferEntity {
   id: number;
   uid: string;
   sender_wallet_id: number;
