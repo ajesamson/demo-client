@@ -17,15 +17,16 @@ import { TransactionResponseDto } from './dto/transaction-response.dto';
 import { WalletUserEntity } from 'src/wallets/entities/wallet-user.entity';
 import { UsersService } from 'src/users/users.service';
 import { TransactionTransferResponseDto } from './dto/transaction-transfer-response.dto';
+import { TransactionRepository } from './repositories/transaction.repository';
 
 @Injectable()
 export class TransactionsService {
-  private readonly dbTable = 'transactions';
   constructor(
     private readonly knexService: KnexService,
     private readonly walletService: WalletsService,
     private readonly transfersService: TransfersService,
     private readonly usersService: UsersService,
+    private readonly repo: TransactionRepository,
   ) {}
 
   async create(
@@ -92,15 +93,13 @@ export class TransactionsService {
             dto,
           );
 
-          return await trx<TransactionEntity>(this.dbTable)
-            .where({ id: transactionId })
-            .first();
+          return await this.repo.findByField({ id: transactionId });
         },
       );
 
       return plainToInstance(TransactionResponseDto, newTransactionData, {
         excludeExtraneousValues: true,
-      }) as TransactionResponseDto;
+      });
     } catch (error) {
       if (
         error instanceof NotFoundException ||
@@ -165,8 +164,7 @@ export class TransactionsService {
       });
     }
 
-    const [transactionId] = await trx(this.dbTable).insert(newTransaction);
-    return transactionId;
+    return await this.repo.create(newTransaction as TransactionEntity[]);
   }
 
   async initiateTransfer(
@@ -235,50 +233,15 @@ export class TransactionsService {
   }
 
   async findAll(): Promise<TransactionTransferResponseDto[]> {
-    const data = await this.knexService
-      .connection(this.dbTable)
-      .join('transfers', 'transfers.id', 'transactions.transfer_id')
-      .select(
-        'transactions.uid',
-        'transactions.type',
-        'transactions.amount',
-        'transactions.description',
-        'transactions.reference',
-        'transfers.uid as transfer_id',
-      );
+    const data = await this.repo.findAll();
 
     return plainToInstance(TransactionTransferResponseDto, data, {
       excludeExtraneousValues: true,
-    }) as TransactionTransferResponseDto[];
+    });
   }
 
   async findOne(uid: string): Promise<TransactionTransferResponseDto> {
-    const data = await this.knexService
-      .connection(this.dbTable)
-      .where({ 'transactions.uid': uid })
-      .leftJoin('transfers', 'transfers.id', 'transactions.transfer_id')
-      .leftJoin(
-        'wallets as senderWallet',
-        'senderWallet.id',
-        'transfers.sender_wallet_id',
-      )
-      .leftJoin(
-        'wallets as receiverWallet',
-        'receiverWallet.id',
-        'transfers.receiver_wallet_id',
-      )
-      .first(
-        'transactions.uid',
-        'transactions.type',
-        'transactions.amount',
-        'transactions.description',
-        'transactions.reference',
-        'transfers.uid as transfer_id',
-        'senderWallet.uid as sender_wallet_id',
-        'receiverWallet.uid as receiver_wallet_id',
-        'transfers.amount as transfer_amount',
-        'transfers.description as transfer_description',
-      );
+    const data = await this.repo.findOne(uid);
 
     if (!data) {
       throw new NotFoundException('Transaction not found', {
@@ -287,42 +250,35 @@ export class TransactionsService {
       });
     }
 
-    return TransactionTransferResponseDto.fromJoinRow(data);
+    const dto = TransactionTransferResponseDto.fromJoinRow(data);
+    return plainToInstance(TransactionTransferResponseDto, dto, {
+      excludeExtraneousValues: true,
+    });
   }
 
   async findById(id: number): Promise<TransactionEntity | undefined> {
-    return await this.knexService
-      .connection<TransactionEntity>(this.dbTable)
-      .where({ id })
-      .first();
+    return await this.repo.findByField({ id });
   }
 
   async findByUid(uid: string): Promise<TransactionEntity | undefined> {
-    return await this.knexService
-      .connection<TransactionEntity>(this.dbTable)
-      .where({ uid })
-      .first();
+    return await this.repo.findByField({ uid });
   }
 
   async update(
     uid: string,
     dto: UpdateTransactionDto,
   ): Promise<TransactionResponseDto> {
-    const affectedRow = await this.knexService
-      .connection<TransactionEntity>(this.dbTable)
-      .where({ uid })
-      .update(dto);
+    const updatedTransaction = await this.repo.update(uid, dto);
 
-    if (!affectedRow) {
+    if (!updatedTransaction) {
       throw new NotFoundException('Transaction not found', {
         cause: new Error(),
         description: `Transaction with id ${uid} not found`,
       });
     }
 
-    const updatedTransaction = await this.findByUid(uid);
     return plainToInstance(TransactionResponseDto, updatedTransaction, {
       excludeExtraneousValues: true,
-    }) as TransactionResponseDto;
+    });
   }
 }
