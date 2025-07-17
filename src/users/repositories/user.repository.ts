@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common';
 import { KnexService } from 'src/knex/knex.service';
 import { UserEntity } from '../entities/user.entity';
 import { Knex } from 'knex';
-import { UpdateUserDto } from '../dto/update-user.dto';
 
 @Injectable()
 export class UserRepository {
@@ -36,7 +35,11 @@ export class UserRepository {
     return await this.findByField({ uid });
   }
 
-  async create(data: UserEntity, trx: Knex): Promise<number> {
+  async create(data: UserEntity, trx: Knex): Promise<number | undefined> {
+    const user = await this.findByField({ email: data.email }, trx);
+    if (user) {
+      return undefined;
+    }
     const [id] = await trx<UserEntity>(this.table).insert(data);
     return id;
   }
