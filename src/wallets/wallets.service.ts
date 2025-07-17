@@ -1,10 +1,10 @@
 import {
   BadRequestException,
+  forwardRef,
+  Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { UpdateWalletDto } from './dto/update-wallet.dto';
-import { KnexService } from '../knex/knex.service';
 import { WalletResponseDto } from './dto/wallet-response.dto';
 import { plainToInstance } from 'class-transformer';
 import { Knex } from 'knex';
@@ -14,6 +14,8 @@ import { WalletUserEntity } from './entities/wallet-user.entity';
 import { WalletUserResponseDto } from './dto/wallet-user-response.dto';
 import { WalletTransactionsResponseDto } from './dto/wallet-transactions-response.dto';
 import { WalletRepository } from './repositories/wallet.repository';
+import { CreateWalletDto } from './dto/create-wallet.dto';
+import { UsersService } from 'src/users/users.service';
 
 @Injectable()
 export class WalletsService {
@@ -22,7 +24,8 @@ export class WalletsService {
   private readonly dbTransactionsTable = 'transactions';
 
   constructor(
-    private readonly knexService: KnexService,
+    @Inject(forwardRef(() => UsersService))
+    private readonly usersService: UsersService,
     private readonly repo: WalletRepository,
   ) {}
 
@@ -36,6 +39,11 @@ export class WalletsService {
     }
 
     return walletId;
+  }
+
+  async createByUsersUid(dto: CreateWalletDto): Promise<number> {
+    const user = await this.usersService.findByUid(dto.user_id);
+    return await this.create(user.id);
   }
 
   async findByUserId(userId: number): Promise<WalletEntity | undefined> {
@@ -121,24 +129,6 @@ export class WalletsService {
 
     const dataFromRow = WalletTransactionsResponseDto.fromJoinRow(data);
     return plainToInstance(WalletTransactionsResponseDto, dataFromRow, {
-      excludeExtraneousValues: true,
-    });
-  }
-
-  async update(
-    uid: string,
-    updateWalletDto: UpdateWalletDto,
-    trx?: Knex.Transaction,
-  ): Promise<WalletResponseDto> {
-    const updatedWallet = await this.repo.update(uid, updateWalletDto, trx);
-    if (!updatedWallet) {
-      throw new NotFoundException('Wallet not found', {
-        cause: new Error(),
-        description: `Wallet with id ${uid} not found`,
-      });
-    }
-
-    return plainToInstance(WalletResponseDto, updatedWallet, {
       excludeExtraneousValues: true,
     });
   }
