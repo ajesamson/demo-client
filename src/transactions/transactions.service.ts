@@ -43,6 +43,12 @@ export class TransactionsService {
     try {
       const newTransactionData = await this.knexService.connection.transaction(
         async (trx: Knex.Transaction) => {
+          // verify authenticated user is valid
+          const user = await this.usersService.findByUid(uid, trx);
+          if (!user) {
+            throw new BadRequestException();
+          }
+
           // get sender wallet and receiver wallets
           const walletUidList = [dto.wallet_id];
           if (dto.receiver_wallet_id) {
@@ -71,10 +77,6 @@ export class TransactionsService {
           }
 
           // create transaction
-          const user = await this.usersService.findByUid(uid, trx);
-          if (!user) {
-            throw new BadRequestException();
-          }
           const userId = user.id;
           const transactionId = await this.initiateTransaction(
             trx,
