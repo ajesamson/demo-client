@@ -21,6 +21,7 @@ describe('WalletsService', () => {
   const trx = {} as Knex.Transaction;
 
   beforeEach(async () => {
+    jest.clearAllMocks();
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         WalletsService,
@@ -63,7 +64,11 @@ describe('WalletsService', () => {
   describe('createByUsersUid', () => {
     it('should create wallet for user with uid', async () => {
       mockUsersService.findByUid.mockResolvedValue(userStud);
-      jest.spyOn(service, 'create').mockResolvedValue(1);
+      jest
+        .spyOn(service, 'create')
+        .mockImplementation(async (user_id: number, trx?: Knex.Transaction) =>
+          Promise.resolve(1),
+        );
 
       const result = await service.createByUsersUid(createWalletDtoStub);
 
