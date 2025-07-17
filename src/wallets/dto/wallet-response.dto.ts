@@ -5,7 +5,7 @@ export class WalletResponseDto {
   id: string;
 
   @Expose()
-  balance: number;
+  balance: string;
 
   @Expose()
   currency: string;
