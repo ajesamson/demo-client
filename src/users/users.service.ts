@@ -1,5 +1,7 @@
 import {
   BadRequestException,
+  forwardRef,
+  Inject,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -27,6 +29,7 @@ export class UsersService {
   constructor(
     private readonly knexService: KnexService,
     private readonly httpService: HttpService,
+    @Inject(forwardRef(() => WalletsService))
     private readonly walletService: WalletsService,
     private readonly repo: UserRepository,
   ) {}
