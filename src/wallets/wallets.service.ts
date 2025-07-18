@@ -115,6 +115,9 @@ export class WalletsService {
 
   async findOne(uid: string): Promise<WalletUserResponseDto> {
     const data = await this.repo.findOne(uid);
+    if (!data) {
+      throw new NotFoundException(`Wallet with id ${uid} not found`);
+    }
 
     const dataFromRow = WalletUserResponseDto.fromJoinRow(data);
     return plainToInstance(WalletUserResponseDto, dataFromRow, {
@@ -126,6 +129,9 @@ export class WalletsService {
     uid: string,
   ): Promise<WalletTransactionsResponseDto> {
     const data = await this.repo.findWalletTransactions(uid);
+    if (!data.length) {
+      throw new NotFoundException(`Wallet with id ${uid} not found`);
+    }
 
     const dataFromRow = WalletTransactionsResponseDto.fromJoinRow(data);
     return plainToInstance(WalletTransactionsResponseDto, dataFromRow, {
