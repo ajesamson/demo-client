@@ -252,10 +252,7 @@ export class TransactionsService {
       });
     }
 
-    const dto = TransactionTransferResponseDto.fromJoinRow(data);
-    return plainToInstance(TransactionTransferResponseDto, dto, {
-      excludeExtraneousValues: true,
-    });
+    return TransactionTransferResponseDto.fromJoinRow(data);
   }
 
   async findById(id: number): Promise<TransactionEntity | undefined> {
