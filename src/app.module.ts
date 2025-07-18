@@ -23,11 +23,11 @@ import { HttpExceptionFilter } from './common/http-exception/http-exception.filt
       ],
     }),
     KnexModule,
+    AuthModule,
     UsersModule,
     WalletsModule,
     TransactionsModule,
     TransfersModule,
-    AuthModule,
   ],
   controllers: [AppController],
   providers: [
