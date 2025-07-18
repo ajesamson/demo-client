@@ -36,7 +36,10 @@ export class UsersService {
 
   async createUser(dto: CreateUserDto): Promise<UserResponseDto> {
     const karma = await this.validateUser(dto.email);
-    if (!karma['mock-response'] && karma.data.karma_identity != '') {
+    if (karma.status != 'success') {
+      throw new BadRequestException('User could not be validated.');
+    }
+    if (!karma['mock-response'] && karma.data.karma_identity != null) {
       throw new BadRequestException('User has been blacklisted');
     }
     try {
@@ -75,6 +78,12 @@ export class UsersService {
 
   async validateUser(email: string): Promise<KarmaEntity> {
     const API_KEY = process.env.ADJUTOR_API_KEY;
+    if (!API_KEY) {
+      throw new InternalServerErrorException(
+        'An internal server error occurred',
+      );
+      // TODO: add log to configure the API_KEY before proceeding
+    }
     const config: AxiosRequestConfig = {
       headers: { Authorization: `Bearer ${API_KEY}` },
     };
