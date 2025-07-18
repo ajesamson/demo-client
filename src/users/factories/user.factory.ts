@@ -46,7 +46,7 @@ export const userResponseDtoStub: UserResponseDto[] = [
 
 export const badKarmaResponse = {
   data: {
-    status: '',
+    status: 'success',
     meta: {},
     message: '',
     data: { karma_identity: 'abc' },
@@ -56,10 +56,10 @@ export const badKarmaResponse = {
 export const goodKarmaResponse = {
   data: {
     'mock-response': '',
-    status: '',
+    status: 'success',
     meta: {},
     message: '',
-    data: { karma_identity: '' },
+    data: { karma_identity: null },
   } as KarmaEntity,
 };
 

@@ -7,7 +7,7 @@ export interface KarmaEntity {
 }
 
 interface KarmaData {
-  karma_identity: string;
+  karma_identity: string | null;
   amount_in_contention: string;
   reason: string | null;
   default_date: string;
