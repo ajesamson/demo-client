@@ -45,23 +45,23 @@ Demo Credit is a mobile lending app that requires wallet functionality. This is 
    
 
 2. Install dependencies:
-```bash
-   npm install
-```
+    ```bash
+    $ npm install
+    ```
    
 
 ## Configuration
 Create a .env file in the root directory and add the following environment variables:
 
->DB_CLIENT=mysql2
-DB_HOST=localhost
-DB_PORT=3306
-MYSQL_USER=your_db_user
-MYSQL_PASSWORD=your_db_password
-MYSQL_DATABASE=your_database
-MYSQL_ROOT_PASSWORD=your_password
-ADJUTOR_API_KEY=your_adjutor_api_key
-JWT_SECRET=your_jwt_secret
+> DB_CLIENT=mysql2
+> DB_HOST=localhost
+> DB_PORT=3306
+> MYSQL_USER=your_db_user
+> MYSQL_PASSWORD=your_db_password
+> MYSQL_DATABASE=your_database
+> MYSQL_ROOT_PASSWORD=your_password
+> ADJUTOR_API_KEY=your_adjutor_api_key
+> JWT_SECRET=your_jwt_secret
 
 
 ## Database Setup
