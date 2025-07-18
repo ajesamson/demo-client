@@ -34,16 +34,16 @@ export class TransactionsController {
     return await this.transactionsService.findAll();
   }
 
-  @Get(':uid')
-  async findOne(@Param('uid', new ParseUUIDPipe()) uid: string) {
-    return await this.transactionsService.findOne(uid);
+  @Get(':id')
+  async findOne(@Param('id', new ParseUUIDPipe()) id: string) {
+    return await this.transactionsService.findOne(id);
   }
 
-  @Patch(':uid')
+  @Patch(':id')
   async update(
-    @Param('uid', new ParseUUIDPipe()) uid: string,
+    @Param('id', new ParseUUIDPipe()) id: string,
     @Body() updateTransactionDto: UpdateTransactionDto,
   ) {
-    return await this.transactionsService.update(uid, updateTransactionDto);
+    return await this.transactionsService.update(id, updateTransactionDto);
   }
 }

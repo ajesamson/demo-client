@@ -30,16 +30,16 @@ export class UsersController {
     return await this.usersService.findAll();
   }
 
-  @Get(':uid')
-  async findOne(@Param('uid', new ParseUUIDPipe()) uid: string) {
-    return await this.usersService.findOne(uid);
+  @Get(':id')
+  async findOne(@Param('id', new ParseUUIDPipe()) id: string) {
+    return await this.usersService.findOne(id);
   }
 
-  @Patch(':uid')
+  @Patch(':id')
   async update(
-    @Param('uid', new ParseUUIDPipe()) uid: string,
+    @Param('id', new ParseUUIDPipe()) id: string,
     @Body() updateUserDto: UpdateUserDto,
   ) {
-    return await this.usersService.update(uid, updateUserDto);
+    return await this.usersService.update(id, updateUserDto);
   }
 }

@@ -27,13 +27,13 @@ export class WalletsController {
     return await this.walletsService.findAll();
   }
 
-  @Get(':uid')
-  async findOne(@Param('uid', new ParseUUIDPipe()) uid: string) {
-    return await this.walletsService.findOne(uid);
+  @Get(':id')
+  async findOne(@Param('id', new ParseUUIDPipe()) id: string) {
+    return await this.walletsService.findOne(id);
   }
 
-  @Get(':uid/transactions')
-  async findTransactions(@Param('uid', new ParseUUIDPipe()) uid: string) {
-    return await this.walletsService.findWalletTransactions(uid);
+  @Get(':id/transactions')
+  async findTransactions(@Param('id', new ParseUUIDPipe()) id: string) {
+    return await this.walletsService.findWalletTransactions(id);
   }
 }
