@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Logger, Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { KnexModule } from './knex/knex.module';
@@ -11,6 +11,7 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 import { ResponseInterceptor } from './common/interceptors/response.interceptors';
 import { HttpExceptionFilter } from './common/http-exception/http-exception.filter';
+import { LoggingInterceptor } from './common/interceptors/logging.interceptors';
 
 @Module({
   imports: [
@@ -40,6 +41,11 @@ import { HttpExceptionFilter } from './common/http-exception/http-exception.filt
       provide: APP_FILTER,
       useClass: HttpExceptionFilter,
     },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: LoggingInterceptor,
+    },
+    Logger,
   ],
 })
 export class AppModule {}
