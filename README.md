@@ -84,7 +84,7 @@ Create a .env file in the root directory and add the following environment varia
 
 
 ## API Endpoints
-_Note: An example schema has been provided for each endpoint in the swagger documentation._
+_Note: An example schema has been provided for each endpoint in the swagger documentation. To download the schema and import to postman, visit `/api/openapi.json`_
 
 ### App
 - *GET /api*: Check health status
@@ -97,7 +97,6 @@ _Note: An example schema has been provided for each endpoint in the swagger docu
 - *GET /api/users*: Retrieve all registered users.
 - *GET /api/users/:id*: Get user details by ID.
 - *PATCH /api/users/:id*: Update user's password and fullname.
-- *GET /api/users/:id/wallet*: Get user's wallet. This caters for non-authorization implementation
 
 ### Wallet Management
 - *POST /api/wallets*: Create a new wallet for a user without wallet.
