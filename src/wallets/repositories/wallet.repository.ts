@@ -41,6 +41,7 @@ export class WalletRepository {
         'wallets.uid as uid',
         'wallets.currency',
         'wallets.balance',
+        'wallets.user_id as userId',
         'wallets.is_active as isWalletActive',
         'users.is_active as isUserActive',
         'users.is_onboarded as isUserOnboarded',
