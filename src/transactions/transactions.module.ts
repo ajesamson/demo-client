@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Logger, Module } from '@nestjs/common';
 import { TransactionsService } from './transactions.service';
 import { TransactionsController } from './transactions.controller';
 import { WalletsModule } from 'src/wallets/wallets.module';
@@ -8,7 +8,7 @@ import { TransactionRepository } from './repositories/transaction.repository';
 
 @Module({
   controllers: [TransactionsController],
-  providers: [TransactionsService, TransactionRepository],
+  providers: [TransactionsService, TransactionRepository, Logger],
   imports: [WalletsModule, TransfersModule, UsersModule],
   exports: [TransactionsService],
 })
