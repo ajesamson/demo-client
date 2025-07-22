@@ -1,7 +1,10 @@
 import {
   BadRequestException,
+  Inject,
   Injectable,
   InternalServerErrorException,
+  Logger,
+  LoggerService,
   NotFoundException,
 } from '@nestjs/common';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
@@ -22,6 +25,7 @@ import { TransactionRepository } from './repositories/transaction.repository';
 @Injectable()
 export class TransactionsService {
   constructor(
+    @Inject(Logger) private readonly logger: LoggerService,
     private readonly knexService: KnexService,
     private readonly walletService: WalletsService,
     private readonly transfersService: TransfersService,
@@ -58,6 +62,17 @@ export class TransactionsService {
             trx,
             walletUidList,
           );
+
+          //TODO: replace user.fullname with user.role
+          if (senderWallet.userId != user.uid && user.fullname != 'John Doe') {
+            this.logger.log(
+              `Transaction carried out non account owner and admin with id ${user.id} - ${user.fullname}`,
+            );
+            throw new BadRequestException(
+              'You are not authorized to carry out transaction',
+            );
+          }
+
           this.confirmWalletStatus(
             senderWallet,
             receiverWallet,
