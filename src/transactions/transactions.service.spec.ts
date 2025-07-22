@@ -17,7 +17,7 @@ import {
 } from './factories/transaction.factory';
 import * as transformer from 'class-transformer';
 import { TransactionResponseDto } from './dto/transaction-response.dto';
-import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Logger, NotFoundException } from '@nestjs/common';
 import { Knex } from 'knex';
 import { TransactionTypesEnum } from 'src/common/enums/transaction-types.enum';
 import { WalletUserEntity } from 'src/wallets/entities/wallet-user.entity';
@@ -32,6 +32,7 @@ describe('TransactionsService', () => {
     },
   };
 
+  const mockLogger = {};
   const mockWalletService = {};
   const mockTransfersService = {};
   const mockUsersService = {
@@ -71,6 +72,10 @@ describe('TransactionsService', () => {
         {
           provide: TransactionRepository,
           useValue: mockRepo,
+        },
+        {
+          provide: Logger,
+          useValue: mockLogger,
         },
       ],
     }).compile();
